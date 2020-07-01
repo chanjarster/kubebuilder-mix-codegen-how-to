@@ -1,0 +1,4 @@
+domain: example.com
+multigroup: true
+repo: example.com/foo-controller
+version: "2"
