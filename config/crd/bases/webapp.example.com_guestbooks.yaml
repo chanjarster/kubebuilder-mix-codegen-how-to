@@ -34,9 +34,8 @@ spec:
         spec:
           description: GuestbookSpec defines the desired state of Guestbook
           properties:
-            foo:
-              description: Foo is an example field of Guestbook. Edit Guestbook_types.go
-                to remove/update
+            name:
+              description: Name of Guestbook.
               type: string
           type: object
         status:
