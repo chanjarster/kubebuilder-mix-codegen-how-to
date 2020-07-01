@@ -1,4 +1,8 @@
 domain: example.com
 multigroup: true
 repo: example.com/foo-controller
+resources:
+- group: webapp
+  kind: Guestbook
+  version: v1
 version: "2"
