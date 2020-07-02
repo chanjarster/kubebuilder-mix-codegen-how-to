@@ -38,6 +38,7 @@ type GuestbookStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
+// +genclient
 // +kubebuilder:object:root=true
 
 // Guestbook is the Schema for the guestbooks API
