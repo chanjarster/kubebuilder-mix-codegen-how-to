@@ -55,10 +55,11 @@ func main() {
 	// stop signal channel which is triggered for SIGTERM or SIGINT
 	stopSignalCh := ctrl.SetupSignalHandler()
 
-	// get config from:
+	// auto kube config discovery:
 	// out-of-cluster:
 	//  1. env KUBECONFIG
 	//  2. flag --kubeconfig
+	//  3. ~/.kube/kubeconfig
 	// in-cluster:
 	//  /var/run/secrets/kubernetes.io/serviceaccount/token
 	//  /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
