@@ -2,6 +2,7 @@ apiVersion: webapp.example.com/v1
 kind: Guestbook
 metadata:
   name: guestbook-sample
+  namespace: default
 spec:
   # Add fields here
-  foo: bar
+  name: bar
