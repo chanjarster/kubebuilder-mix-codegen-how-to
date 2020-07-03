@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
@@ -32,6 +34,7 @@ import (
 
 	guestbookclientset "example.com/foo-controller/generated/webapp/clientset/versioned"
 	guestbookinformers "example.com/foo-controller/generated/webapp/informers/externalversions"
+	guestbooklisters "example.com/foo-controller/generated/webapp/listers/webapp/v1"
 )
 
 var (
@@ -68,10 +71,11 @@ func main() {
 	// clienset
 	clientset := guestbookclientset.NewForConfigOrDie(kubeConfig)
 
+
 	// informers
 	informerFactory := guestbookinformers.NewSharedInformerFactory(clientset, time.Minute)
-	informer := informerFactory.Webapp().V1().Guestbooks()
-	informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informers := informerFactory.Webapp().V1().Guestbooks()
+	informers.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			klog.Infof("Added: %v", object)
 		},
@@ -85,24 +89,58 @@ func main() {
 
 	informerFactory.Start(stopSignalCh)
 
-	lister := informer.Lister()
+	lister := informers.Lister()
+	fmt.Println("================")
+	fmt.Println("before cache sync lister got nothing")
+	listExample(lister)
 
+	fmt.Println("================")
 	timeout := time.NewTimer(time.Second * 30)
 	timeoutCh := make(chan struct{})
 	go func() {
 		<-timeout.C
 		timeoutCh <- struct{}{}
 	}()
-	if ok := cache.WaitForCacheSync(timeoutCh, informer.Informer().HasSynced); !ok {
+	if ok := cache.WaitForCacheSync(timeoutCh, informers.Informer().HasSynced); !ok {
 		klog.Fatalln("Timeout expired during waiting for caches to sync.")
 	}
 
+	fmt.Println("================")
+	fmt.Println("after cache sync lister got something")
+	guestbooks := listExample(lister)
+
+	fmt.Println("================")
+	for _, guestbook := range guestbooks {
+		clientsetExample(clientset, guestbook)
+	}
+	<-stopSignalCh
+
+}
+
+func listExample(lister guestbooklisters.GuestbookLister) []*webappv1.Guestbook {
 	guestbooks, err := lister.List(labels.NewSelector())
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("list result:")
 	for _, guestbook := range guestbooks {
 		fmt.Println(guestbook)
 	}
+	return guestbooks
+}
 
+func clientsetExample(clientset *guestbookclientset.Clientset, guestbook *webappv1.Guestbook) {
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	copy := guestbook.DeepCopy()
+	copy.Status.Ok = true
+	// If the CustomResourceSubresources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the Guestbook resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	_, err := clientset.WebappV1().Guestbooks(copy.Namespace).UpdateStatus(context.TODO(), copy, metav1.UpdateOptions{})
+	if err != nil {
+		println(err)
+	}
 }
