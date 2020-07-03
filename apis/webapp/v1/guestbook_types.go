@@ -36,10 +36,14 @@ type GuestbookSpec struct {
 type GuestbookStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// is this guestbook ok?
+	Ok bool `json:"ok"`
 }
 
 // +genclient
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Guestbook is the Schema for the guestbooks API
 type Guestbook struct {
